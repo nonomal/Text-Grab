@@ -1,18 +1,15 @@
-﻿using System;
+﻿using Dapplo.Windows.User32;
+using Fasetto.Word;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
-using System.Security.Permissions;
-using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Text_Grab.Properties;
+using Text_Grab.Extensions;
 using Text_Grab.Views;
-// using Screen = System.Windows.Forms.Screen;
-using WpfScreenHelper;
 using static OSInterop;
 
 namespace Text_Grab.Utilities;
@@ -30,36 +27,42 @@ public static class WindowUtilities
 
     public static void SetWindowPosition(Window passedWindow)
     {
-        string storedPostionString = "";
+        string storedPositionString = "";
 
         if (passedWindow is EditTextWindow)
-            storedPostionString = Properties.Settings.Default.EditTextWindowSizeAndPosition;
+            storedPositionString = AppUtilities.TextGrabSettings.EditTextWindowSizeAndPosition;
 
         if (passedWindow is GrabFrame)
-            storedPostionString = Properties.Settings.Default.GrabFrameWindowSizeAndPosition;
+            storedPositionString = AppUtilities.TextGrabSettings.GrabFrameWindowSizeAndPosition;
 
-        List<string> storedPostion = new(storedPostionString.Split(','));
+        List<string> storedPosition = new(storedPositionString.Split(','));
 
         bool isStoredRectWithinScreen = false;
 
-        if (storedPostion != null
-            && storedPostion.Count == 4)
+        if (storedPosition != null
+            && storedPosition.Count == 4)
         {
-            bool couldParseAll = false;
-            couldParseAll = double.TryParse(storedPostion[0], out double parsedX);
-            couldParseAll = double.TryParse(storedPostion[1], out double parsedY);
-            couldParseAll = double.TryParse(storedPostion[2], out double parsedWid);
-            couldParseAll = double.TryParse(storedPostion[3], out double parsedHei);
+            bool couldParseX = double.TryParse(storedPosition[0], out double parsedX);
+            bool couldParseY = double.TryParse(storedPosition[1], out double parsedY);
+            bool couldParseW = double.TryParse(storedPosition[2], out double parsedWid);
+            bool couldParseH = double.TryParse(storedPosition[3], out double parsedHei);
+
+            bool couldParseAll = couldParseX && couldParseY && couldParseW && couldParseH;
+
             Rect storedSize = new((int)parsedX, (int)parsedY, (int)parsedWid, (int)parsedHei);
-            IEnumerable<Screen> allScreens = Screen.AllScreens;
-            WindowCollection allWindows = Application.Current.Windows;
+            DisplayInfo[] allScreens = DisplayInfo.AllDisplayInfos;
 
             if (parsedHei < 10 || parsedWid < 10)
                 return;
 
-            foreach (Screen screen in allScreens)
-                if (screen.WpfBounds.IntersectsWith(storedSize))
+            foreach (DisplayInfo screen in allScreens)
+            {
+                Rect screenRect = screen.Bounds;
+                DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi(passedWindow);
+                screenRect = screenRect.GetScaledDownByDpi(dpi);
+                if (screenRect.IntersectsWith(storedSize))
                     isStoredRectWithinScreen = true;
+            }
 
             if (isStoredRectWithinScreen && couldParseAll)
             {
@@ -75,7 +78,7 @@ public static class WindowUtilities
 
     public static void LaunchFullScreenGrab(TextBox? destinationTextBox = null)
     {
-        IEnumerable<Screen> allScreens = Screen.AllScreens;
+        DisplayInfo[] allScreens = DisplayInfo.AllDisplayInfos;
         WindowCollection allWindows = Application.Current.Windows;
 
         List<FullscreenGrab> allFullscreenGrab = new();
@@ -83,8 +86,8 @@ public static class WindowUtilities
         int numberOfScreens = allScreens.Count();
 
         foreach (Window window in allWindows)
-            if (window is FullscreenGrab)
-                allFullscreenGrab.Add((FullscreenGrab)window);
+            if (window is FullscreenGrab grab)
+                allFullscreenGrab.Add(grab);
 
         int numberOfFullscreenGrabWindowsToCreate = numberOfScreens - allFullscreenGrab.Count;
 
@@ -95,37 +98,34 @@ public static class WindowUtilities
 
         int count = 0;
 
-        foreach (Screen screen in allScreens)
+        double sideLength = 40;
+
+        foreach (DisplayInfo screen in allScreens)
         {
-            FullscreenGrab fullscreenGrab = allFullscreenGrab[count];
-            fullscreenGrab.WindowStartupLocation = WindowStartupLocation.Manual;
-            fullscreenGrab.Width = 400;
-            fullscreenGrab.Height = 200;
-            fullscreenGrab.DestinationTextBox = destinationTextBox;
-            fullscreenGrab.WindowState = WindowState.Normal;
+            FullscreenGrab fullScreenGrab = allFullscreenGrab[count];
+            fullScreenGrab.WindowStartupLocation = WindowStartupLocation.Manual;
+            fullScreenGrab.Width = sideLength;
+            fullScreenGrab.Height = sideLength;
+            fullScreenGrab.DestinationTextBox = destinationTextBox;
+            fullScreenGrab.WindowState = WindowState.Normal;
 
-            System.Windows.Point screenCenterPoint = screen.GetCenterPoint();
-            System.Windows.Point windowCenterPoint = fullscreenGrab.GetWindowCenter();
+            Point screenCenterPoint = screen.ScaledCenterPoint();
 
-            double virtualScreenTop = SystemParameters.VirtualScreenTop;
-            double virtualScreenLeft = SystemParameters.VirtualScreenLeft;
-            double virtualScreenWidth = SystemParameters.VirtualScreenWidth;
-            double virtualScreenHeight = SystemParameters.VirtualScreenHeight;
+            fullScreenGrab.Left = screenCenterPoint.X - (sideLength / 2);
+            fullScreenGrab.Top = screenCenterPoint.Y - (sideLength / 2);
 
-            fullscreenGrab.Left = screenCenterPoint.X - windowCenterPoint.X;
-            fullscreenGrab.Top = screenCenterPoint.Y - windowCenterPoint.Y;
-
-            fullscreenGrab.Show();
-            fullscreenGrab.Activate();
+            fullScreenGrab.Show();
+            fullScreenGrab.Activate();
 
             count++;
         }
     }
 
-    public static System.Windows.Point GetCenterPoint(this Screen screen)
+    public static Point GetCenterPoint(this DisplayInfo screen)
     {
-        double x = screen.WpfBounds.Left + (screen.WpfBounds.Width / 2);
-        double y = screen.WpfBounds.Top + (screen.WpfBounds.Height / 2);
+        Rect screenRect = screen.Bounds;
+        double x = screenRect.Left + (screenRect.Width / 2);
+        double y = screenRect.Top + (screenRect.Height / 2);
         return new(x, y);
     }
 
@@ -159,12 +159,12 @@ public static class WindowUtilities
         {
             if (window is FullscreenGrab fsg)
             {
-                if (!string.IsNullOrWhiteSpace(fsg.textFromOCR))
-                    stringFromOCR = fsg.textFromOCR;
+                if (!string.IsNullOrWhiteSpace(fsg.TextFromOCR))
+                    stringFromOCR = fsg.TextFromOCR;
 
                 if (fsg.DestinationTextBox is not null)
                 {
-                    // TODO 3.0 Find out how to re normaize an ETW when FSG had it minimzed 
+                    // TODO 3.0 Find out how to re normalize an ETW when FSG had it minimized 
                     isFromEditWindow = true;
                     // if (fsg.EditWindow.WindowState == WindowState.Minimized)
                     //     fsg.EditWindow.WindowState = WindowState.Normal;
@@ -174,7 +174,7 @@ public static class WindowUtilities
             }
         }
 
-        if (Settings.Default.TryInsert
+        if (AppUtilities.TextGrabSettings.TryInsert
             && !string.IsNullOrWhiteSpace(stringFromOCR)
             && !isFromEditWindow)
         {
@@ -199,9 +199,9 @@ public static class WindowUtilities
 
     internal static async Task TryInsertString(string stringToInsert)
     {
-        await Task.Delay(TimeSpan.FromSeconds(Settings.Default.InsertDelay));
+        await Task.Delay(TimeSpan.FromSeconds(AppUtilities.TextGrabSettings.InsertDelay));
 
-        List<INPUT> inputs = new List<INPUT>();
+        List<INPUT> inputs = new();
         // make sure keys are up.
         TryInjectModifierKeyUp(ref inputs, VirtualKeyShort.LCONTROL);
         TryInjectModifierKeyUp(ref inputs, VirtualKeyShort.RCONTROL);
@@ -242,7 +242,7 @@ public static class WindowUtilities
         // Most significant bit is set if key is down
         if ((GetAsyncKeyState((int)modifier) & 0x8000) != 0)
         {
-            var inputEvent = default(INPUT);
+            INPUT inputEvent = default(INPUT);
             inputEvent.Type = OSInterop.InputType.INPUT_KEYBOARD;
             inputEvent.U.Ki.WVk = modifier;
             inputEvent.U.Ki.DwFlags = KEYEVENTF.KEYUP;
@@ -254,7 +254,7 @@ public static class WindowUtilities
     {
         WindowCollection allWindows = Application.Current.Windows;
 
-        foreach (var window in allWindows)
+        foreach (Window window in allWindows)
         {
             if (window is T matchWindow)
             {
@@ -264,8 +264,16 @@ public static class WindowUtilities
         }
 
         // No Window Found, open a new one
-        T newWindow = new T();
-        newWindow.Show();
+        T newWindow = new();
+
+        try
+        {
+            newWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("An error occurred while trying to open a new window. Please try again.", ex.Message);
+        }
         return newWindow;
     }
 
@@ -275,7 +283,7 @@ public static class WindowUtilities
 
         bool shouldShutDown = false;
 
-        if (Settings.Default.RunInTheBackground)
+        if (AppUtilities.TextGrabSettings.RunInTheBackground)
         {
             if (App.Current is App app)
             {
@@ -291,4 +299,35 @@ public static class WindowUtilities
         if (shouldShutDown)
             Application.Current.Shutdown();
     }
+
+    public static bool GetMousePosition(out Point mousePosition)
+    {
+        if (GetCursorPos(out POINT point))
+        {
+            mousePosition = new Point(point.X, point.Y);
+            return true;
+        }
+        mousePosition = default;
+        return false;
+    }
+
+    public static bool IsMouseInWindow(this Window window)
+    {
+        GetMousePosition(out Point mousePosition);
+
+        DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi(window);
+        Point absPosPoint = window.GetAbsolutePosition();
+        Rect windowRect = new(absPosPoint.X, absPosPoint.Y,
+            window.ActualWidth * dpi.DpiScaleX,
+            window.ActualHeight * dpi.DpiScaleY);
+        return windowRect.Contains(mousePosition);
+    }
+
+    #region DLLImport
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    #endregion
 }

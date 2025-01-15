@@ -3,42 +3,47 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Text_Grab.Controls;
 using Text_Grab.Models;
-using Text_Grab.Properties;
+using Wpf.Ui.Controls;
 
 namespace Text_Grab.Utilities;
 
 public class CustomBottomBarUtilities
 {
-    // this method takes a json string and returns a list of CustomButton using system.text.json
     public static List<ButtonInfo> GetCustomBottomBarItemsSetting()
     {
-        string json = Settings.Default.BottomButtonsJson;
+        string json = AppUtilities.TextGrabSettings.BottomButtonsJson;
 
         if (string.IsNullOrWhiteSpace(json))
             return ButtonInfo.DefaultButtonList;
 
-        // create a list of custom bottom bar items
-        List<ButtonInfo>? customBottomBarItems = new();
+        List<ButtonInfo>? customBottomBarItems = [];
 
-        // deserialize the json string into a list of custom bottom bar items
         customBottomBarItems = JsonSerializer.Deserialize<List<ButtonInfo>>(json);
 
-        // return the list of custom bottom bar items
-        if (customBottomBarItems is null)
+        if (customBottomBarItems is null || customBottomBarItems.Count == 0)
             return ButtonInfo.DefaultButtonList;
+
+        // check to see if the first element is using the default symbol of Diamond24
+        // which is unused by any button
+        if (customBottomBarItems.First().SymbolIcon == SymbolRegular.Diamond24)
+        {
+            // Migrate to the new SymbolRegular instead of the old symbols.
+            Dictionary<string, SymbolRegular> buttonDictionary = ButtonInfo.AllButtons.ToDictionary(button => button.ButtonText, button => button.SymbolIcon);
+
+            foreach (ButtonInfo buttonInfo in customBottomBarItems)
+                buttonInfo.SymbolIcon = buttonDictionary[buttonInfo.ButtonText];
+        }
 
         return customBottomBarItems;
     }
 
-    // a method to save a list of collapsible buttons to the settings as json
     public static void SaveCustomBottomBarItemsSetting(List<CollapsibleButton> bottomBarButtons)
     {
-        List<ButtonInfo> customButtons = new();
+        List<ButtonInfo> customButtons = [];
 
         foreach (CollapsibleButton collapsible in bottomBarButtons)
             customButtons.Add(new(collapsible));
@@ -48,32 +53,29 @@ public class CustomBottomBarUtilities
 
     public static void SaveCustomBottomBarItemsSetting(List<ButtonInfo> bottomBarButtons)
     {
-        // serialize the list of custom bottom bar items to json
         string json = JsonSerializer.Serialize(bottomBarButtons);
-
-        // save the json string to the settings
-        Settings.Default.BottomButtonsJson = json;
-
-        // save the settings
-        Settings.Default.Save();
+        AppUtilities.TextGrabSettings.BottomButtonsJson = json;
+        AppUtilities.TextGrabSettings.Save();
     }
 
     public static List<CollapsibleButton> GetBottomBarButtons(EditTextWindow editTextWindow)
     {
-        List<CollapsibleButton> bottomBarButtons = new();
-        Dictionary<string, RoutedCommand> _localRoutedCommands = new();
+        List<CollapsibleButton> bottomBarButtons = [];
+        Dictionary<string, RoutedCommand> _localRoutedCommands = [];
         List<MethodInfo> methods = GetMethods(editTextWindow);
         Dictionary<string, RoutedCommand> routedCommands = EditTextWindow.GetRoutedCommands();
+
+        int index = 1;
 
         foreach (ButtonInfo buttonItem in GetCustomBottomBarItemsSetting())
         {
             CollapsibleButton button = new()
             {
                 ButtonText = buttonItem.ButtonText,
-                SymbolText = buttonItem.SymbolText,
                 IsSymbol = buttonItem.IsSymbol,
                 CustomButton = buttonItem,
-                ToolTip = buttonItem.ButtonText
+                ToolTip = $"{buttonItem.ButtonText} (ctrl + {index})",
+                ButtonSymbol = buttonItem.SymbolIcon
             };
 
             if (buttonItem.Background != "Transparent"
@@ -91,18 +93,17 @@ public class CustomBottomBarUtilities
                 button.Command = routedCommand;
 
             bottomBarButtons.Add(button);
+            index++;
         }
 
         return bottomBarButtons;
     }
 
-    // a method which returns a list of all methods in this class
     private static List<MethodInfo> GetMethods(object obj)
     {
-        return obj.GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).ToList();
+        return [.. obj.GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)];
     }
 
-    // using the above method match a method name to a string parameter
     private static MethodInfo? GetMethodInfoForName(string methodName, List<MethodInfo> methods)
     {
         foreach (MethodInfo method in methods)
@@ -112,7 +113,6 @@ public class CustomBottomBarUtilities
         return null;
     }
 
-    // a method to match a command name to a string parameter
     private static RoutedCommand? GetCommandBinding(string commandName, Dictionary<string, RoutedCommand> routedCommands)
     {
         foreach (string commandKey in routedCommands.Keys)

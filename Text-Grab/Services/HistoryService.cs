@@ -23,9 +23,10 @@ public class HistoryService
 
     private static readonly int maxHistoryTextOnly = 100;
     private static readonly int maxHistoryWithImages = 10;
-    private List<HistoryInfo> HistoryTextOnly = new();
-    private List<HistoryInfo> HistoryWithImage = new();
-    private DispatcherTimer saveTimer = new();
+    private List<HistoryInfo> HistoryTextOnly = [];
+    private List<HistoryInfo> HistoryWithImage = [];
+    private readonly DispatcherTimer saveTimer = new();
+    private readonly Settings DefaultSettings = AppUtilities.TextGrabSettings;
     #endregion Fields
 
     #region Constructors
@@ -89,6 +90,16 @@ public class HistoryService
         return true;
     }
 
+    public string GetLastTextHistory()
+    {
+        HistoryInfo? lastHistoryItem = HistoryTextOnly.LastOrDefault();
+
+        if (lastHistoryItem is not HistoryInfo historyInfo)
+            return string.Empty;
+
+        return historyInfo.TextContent;
+    }
+
     public List<HistoryInfo> GetRecentGrabs()
     {
         return HistoryWithImage;
@@ -108,7 +119,7 @@ public class HistoryService
     public async Task PopulateMenuItemWithRecentGrabs(MenuItem recentGrabsMenuItem)
     {
         List<HistoryInfo> grabsHistory = GetRecentGrabs();
-        grabsHistory = grabsHistory.OrderByDescending(x => x.CaptureDateTime).ToList();
+        grabsHistory = [.. grabsHistory.OrderByDescending(x => x.CaptureDateTime)];
 
         recentGrabsMenuItem.Items.Clear();
 
@@ -141,7 +152,7 @@ public class HistoryService
 
     public void SaveToHistory(GrabFrame grabFrameToSave)
     {
-        if (!Settings.Default.UseHistory)
+        if (!DefaultSettings.UseHistory)
             return;
 
         HistoryInfo historyInfo = grabFrameToSave.AsHistoryItem();
@@ -176,7 +187,7 @@ public class HistoryService
 
     public void SaveToHistory(HistoryInfo infoFromFullscreenGrab)
     {
-        if (!Settings.Default.UseHistory || infoFromFullscreenGrab.ImageContent is null)
+        if (!DefaultSettings.UseHistory || infoFromFullscreenGrab.ImageContent is null)
             return;
 
         string imgRandomName = Guid.NewGuid().ToString();
@@ -199,7 +210,7 @@ public class HistoryService
 
     public void SaveToHistory(EditTextWindow etwToSave)
     {
-        if (!Settings.Default.UseHistory)
+        if (!DefaultSettings.UseHistory)
             return;
 
         HistoryInfo historyInfo = etwToSave.AsHistoryItem();
@@ -233,22 +244,39 @@ public class HistoryService
             WriteHistoryFiles(HistoryWithImage, nameof(HistoryWithImage), maxHistoryWithImages);
         }
     }
+
+    public void RemoveTextHistoryItem(HistoryInfo historyItem)
+    {
+        HistoryTextOnly.Remove(historyItem);
+
+        saveTimer.Stop();
+        saveTimer.Start();
+    }
+
+    public void RemoveImageHistoryItem(HistoryInfo historyItem)
+    {
+        HistoryWithImage.Remove(historyItem);
+
+        saveTimer.Stop();
+        saveTimer.Start();
+    }
+
     #endregion Public Methods
 
     #region Private Methods
 
     private static async Task<List<HistoryInfo>> LoadHistory(string fileName)
     {
-        string rawText = await FileUtilities.GetTextFileAsync($"{fileName}.json",FileStorageKind.WithHistory);
+        string rawText = await FileUtilities.GetTextFileAsync($"{fileName}.json", FileStorageKind.WithHistory);
 
-        if (string.IsNullOrWhiteSpace(rawText)) return new List<HistoryInfo>();
+        if (string.IsNullOrWhiteSpace(rawText)) return [];
 
-        var tempHistory = JsonSerializer.Deserialize<List<HistoryInfo>>(rawText);
+        List<HistoryInfo>? tempHistory = JsonSerializer.Deserialize<List<HistoryInfo>>(rawText);
 
         if (tempHistory is List<HistoryInfo> jsonList && jsonList.Count > 0)
             return tempHistory;
 
-        return new List<HistoryInfo>();
+        return [];
     }
 
     private static void WriteHistoryFiles(List<HistoryInfo> history, string fileName, int maxNumberToSave)
@@ -299,5 +327,6 @@ public class HistoryService
         WriteHistory();
         CachedBitmap = null;
     }
+
     #endregion Private Methods
 }

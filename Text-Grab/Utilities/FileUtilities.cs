@@ -5,7 +5,6 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.Media.Streaming.Adaptive;
 using Windows.Storage;
 using Windows.Storage.Streams;
 
@@ -17,7 +16,7 @@ public class FileUtilities
 
     public static Task<Bitmap?> GetImageFileAsync(string fileName, FileStorageKind storageKind)
     {
-        if (ImplementAppOptions.IsPackaged())
+        if (AppUtilities.IsPackaged())
             return GetImageFilePackaged(fileName, storageKind);
 
         return GetImageFileUnpackaged(fileName, storageKind);
@@ -37,7 +36,7 @@ public class FileUtilities
         string imageExtensions = string.Empty;
         string separator = "";
         ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
-        Dictionary<string, string> imageFilters = new Dictionary<string, string>();
+        Dictionary<string, string> imageFilters = new();
         foreach (ImageCodecInfo codec in codecs)
         {
             if (codec.FilenameExtension is not string extension)
@@ -73,9 +72,9 @@ public class FileUtilities
         return Path.Combine(dirPath, imageRelativePath);
     }
 
-    public async static Task<string> GetPathToHistory()
+    public static async Task<string> GetPathToHistory()
     {
-        if (ImplementAppOptions.IsPackaged())
+        if (AppUtilities.IsPackaged())
         {
             StorageFolder historyFolder = await GetStorageFolderPackaged("", FileStorageKind.WithHistory);
             return historyFolder.Path;
@@ -86,7 +85,7 @@ public class FileUtilities
 
     public static Task<string> GetTextFileAsync(string fileName, FileStorageKind storageKind)
     {
-        if (ImplementAppOptions.IsPackaged())
+        if (AppUtilities.IsPackaged())
             return GetTextFilePackaged(fileName, storageKind);
 
         return GetTextFileUnpackaged(fileName, storageKind);
@@ -94,7 +93,7 @@ public class FileUtilities
 
     public static Task<bool> SaveImageFile(Bitmap image, string filename, FileStorageKind storageKind)
     {
-        if (ImplementAppOptions.IsPackaged())
+        if (AppUtilities.IsPackaged())
             return SaveImagePackaged(image, filename, storageKind);
 
         return SaveImageFileUnpackaged(image, filename, storageKind);
@@ -102,13 +101,13 @@ public class FileUtilities
 
     public static Task<bool> SaveTextFile(string textContent, string filename, FileStorageKind storageKind)
     {
-        if (ImplementAppOptions.IsPackaged())
+        if (AppUtilities.IsPackaged())
             return SaveTextFilePackaged(textContent, filename, storageKind);
 
         return SaveTextFileUnpackaged(textContent, filename, storageKind);
     }
 
-    private async static Task<Bitmap?> GetImageFilePackaged(string fileName, FileStorageKind storageKind)
+    private static async Task<Bitmap?> GetImageFilePackaged(string fileName, FileStorageKind storageKind)
     {
         StorageFolder folder = await GetStorageFolderPackaged(fileName, storageKind);
 
@@ -123,6 +122,7 @@ public class FileUtilities
         }
     }
 
+#pragma warning disable CS1998
     private static async Task<Bitmap?> GetImageFileUnpackaged(string fileName, FileStorageKind storageKind)
     {
         string folderPath = GetFolderPathUnpackaged(fileName, storageKind);
@@ -133,7 +133,7 @@ public class FileUtilities
 
         return new Bitmap(filePath);
     }
-    private async static Task<string> GetTextFilePackaged(string fileName, FileStorageKind storageKind)
+    private static async Task<string> GetTextFilePackaged(string fileName, FileStorageKind storageKind)
     {
         try
         {
@@ -288,11 +288,12 @@ public class FileUtilities
         AddText(fs, textContent);
         return true;
     }
+#pragma warning restore CS1998
 
-    public async static void TryDeleteHistoryDirectory()
+    public static async void TryDeleteHistoryDirectory()
     {
         FileStorageKind historyFolderKind = FileStorageKind.WithHistory;
-        if (ImplementAppOptions.IsPackaged())
+        if (AppUtilities.IsPackaged())
         {
             StorageFolder historyFolder = await GetStorageFolderPackaged("", historyFolderKind);
 

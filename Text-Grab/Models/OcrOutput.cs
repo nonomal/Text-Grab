@@ -2,7 +2,6 @@
 using Text_Grab.Properties;
 using Text_Grab.Utilities;
 using Windows.Globalization;
-using Windows.Media.Ocr;
 
 namespace Text_Grab.Models;
 
@@ -17,7 +16,7 @@ public record OcrOutput
 
     public void CleanOutput()
     {
-        if (Settings.Default is not Settings userSettings
+        if (AppUtilities.TextGrabSettings is not Settings userSettings
             || Kind == OcrOutputKind.Barcode)
             return;
 

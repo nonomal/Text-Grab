@@ -37,18 +37,23 @@ public class ResultTable
     public ResultTable(ref List<WordBorder> wordBorders, DpiScale dpiScale)
     {
         int borderBuffer = 3;
-        var leftsMin = wordBorders.Select(x => x.Left).Min();
-        var topsMin = wordBorders.Select(x => x.Top).Min();
-        var rightsMax = wordBorders.Select(x => x.Right).Max();
-        var bottomsMax = wordBorders.Select(x => x.Bottom).Max();
 
-        Rectangle bordersBorder = new()
+        Rectangle bordersBorder = new();
+        if (wordBorders.Count > 0)
         {
-            X = (int)leftsMin - borderBuffer,
-            Y = (int)topsMin - borderBuffer,
-            Width = (int)(rightsMax + borderBuffer),
-            Height = (int)(bottomsMax + borderBuffer)
-        };
+            double leftsMin = wordBorders.Select(x => x.Left).Min();
+            double topsMin = wordBorders.Select(x => x.Top).Min();
+            double rightsMax = wordBorders.Select(x => x.Right).Max();
+            double bottomsMax = wordBorders.Select(x => x.Bottom).Max();
+
+            bordersBorder = new()
+            {
+                X = (int)leftsMin - borderBuffer,
+                Y = (int)topsMin - borderBuffer,
+                Width = (int)(rightsMax + borderBuffer),
+                Height = (int)(bottomsMax + borderBuffer)
+            };
+        }
 
         bordersBorder.Width = (int)(bordersBorder.Width * dpiScale.DpiScaleX);
         bordersBorder.Height = (int)(bordersBorder.Height * dpiScale.DpiScaleY);
@@ -67,13 +72,13 @@ public class ResultTable
         if (Rows.Count >= 1)
         {
             topBound = (int)Rows[0].Top;
-            bottomBound = (int)Rows[Rows.Count - 1].Bottom;
+            bottomBound = (int)Rows[^1].Bottom;
         }
 
         if (Columns.Count >= 1)
         {
             leftBound = (int)Columns[0].Left;
-            rightBound = (int)Columns[Columns.Count - 1].Right;
+            rightBound = (int)Columns[^1].Right;
         }
 
         BoundingRect = new()
@@ -328,7 +333,7 @@ public class ResultTable
             Canvas.SetLeft(rowBorder, tableBoundingRect.X);
             Canvas.SetTop(rowBorder, row.Top);
 
-            Rect rowRect = new Rect(tableBoundingRect.X, row.Top, rowBorder.Width, rowBorder.Height);
+            Rect rowRect = new(tableBoundingRect.X, row.Top, rowBorder.Width, rowBorder.Height);
 
             foreach (WordBorder wb in wordBorders)
             {
@@ -370,7 +375,7 @@ public class ResultTable
             Canvas.SetLeft(columnBorder, column.Left);
             Canvas.SetTop(columnBorder, tableBoundingRect.Y);
 
-            Rect columnRect = new Rect(column.Left, tableBoundingRect.Y, columnBorder.Width, columnBorder.Height);
+            Rect columnRect = new(column.Left, tableBoundingRect.Y, columnBorder.Width, columnBorder.Height);
             foreach (WordBorder wb in wordBorders)
             {
                 if (wb.IntersectsWith(columnRect))

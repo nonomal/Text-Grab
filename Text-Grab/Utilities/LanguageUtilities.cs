@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
-using Text_Grab.Properties;
 using Windows.Globalization;
 using Windows.Media.Ocr;
 
@@ -21,8 +20,17 @@ public static class LanguageUtilities
     {
         Language selectedLanguage = GetCurrentInputLanguage();
 
-        if (!string.IsNullOrEmpty(Settings.Default.LastUsedLang))
-            selectedLanguage = new(Settings.Default.LastUsedLang);
+        if (!string.IsNullOrEmpty(AppUtilities.TextGrabSettings.LastUsedLang))
+        {
+            try
+            {
+                selectedLanguage = new(AppUtilities.TextGrabSettings.LastUsedLang);
+            }
+            catch
+            {
+                selectedLanguage = GetCurrentInputLanguage();
+            }
+        }
 
         List<Language> possibleOCRLanguages = OcrEngine.AvailableRecognizerLanguages.ToList();
 
@@ -31,9 +39,6 @@ public static class LanguageUtilities
             System.Windows.MessageBox.Show("No possible OCR languages are installed.", "Text Grab");
             throw new Exception("No possible OCR languages are installed");
         }
-
-        if (Settings.Default.UseTesseract)
-            return selectedLanguage;
 
         // If the selected input language or last used language is not a possible OCR Language
         // then we need to find a similar language to use

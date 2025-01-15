@@ -83,6 +83,11 @@
                 HorizontalAlignment="Left"
                 Click="TryToAlphaMenuItem_Click"
                 Header="Try To Make _Letters" />
+            <MenuItem
+                x:Name="MakeSingleLineMenuItem"
+                HorizontalAlignment="Left"
+                Click="MakeSingleLineMenuItem_Click"
+                Header="Make Text _Single Line" />
             <Separator />
             <MenuItem
                 x:Name="MergeWordBordersMenuItem"
@@ -142,7 +147,7 @@
                         GotFocus="EditWordTextBox_GotFocus"
                         MouseDown="EditWordTextBox_MouseDown"
                         Style="{StaticResource TransparentTextBox}"
-                        Text="{Binding Path=Word, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Text="{Binding ElementName=WordBorderControl, Path=Word, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         TextChanged="EditWordTextBox_TextChanged"
                         Visibility="Visible" />
                 </Viewbox>

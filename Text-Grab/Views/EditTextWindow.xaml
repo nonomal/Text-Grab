@@ -8,8 +8,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="Edit Text"
-    Width="680"
-    Height="450"
+    Width="800"
+    Height="500"
     MinWidth="200"
     MinHeight="200"
     Activated="Window_Activated"
@@ -21,6 +21,7 @@
     Loaded="Window_Loaded"
     PreviewKeyDown="EditTextWindow_PreviewKeyDown"
     ResizeMode="CanResizeWithGrip"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <Window.Resources>
         <Style x:Key="SimpleBTN" TargetType="Button">
@@ -75,6 +76,10 @@
             Command="{x:Static local:EditTextWindow.SplitOnSelectionCmd}"
             Executed="SplitOnSelectionCmdExecuted" />
         <CommandBinding
+            CanExecute="SplitOnSelectionCmdCanExecute"
+            Command="{x:Static local:EditTextWindow.SplitAfterSelectionCmd}"
+            Executed="SplitAfterSelectionCmdExecuted" />
+        <CommandBinding
             CanExecute="IsolateSelectionCmdCanExecute"
             Command="{x:Static local:EditTextWindow.IsolateSelectionCmd}"
             Executed="IsolateSelectionCmdExecuted" />
@@ -122,6 +127,14 @@
             CanExecute="MakeQrCodeCanExecute"
             Command="{x:Static local:EditTextWindow.MakeQrCodeCmd}"
             Executed="MakeQrCodeExecuted" />
+        <CommandBinding
+            CanExecute="IsolateSelectionCmdCanExecute"
+            Command="{x:Static local:EditTextWindow.WebSearchCmd}"
+            Executed="WebSearchExecuted" />
+        <CommandBinding
+            CanExecute="IsolateSelectionCmdCanExecute"
+            Command="{x:Static local:EditTextWindow.DefaultWebSearchCmd}"
+            Executed="DefaultWebSearchExecuted" />
     </Window.CommandBindings>
     <Grid Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
         <Grid.RowDefinitions>
@@ -211,6 +224,10 @@
                     Click="TryToAlphaMenuItem_Click"
                     Header="Try To Make _Letters" />
                 <MenuItem
+                    x:Name="CorrectGuid"
+                    Click="CorrectGuid_Click"
+                    Header="Correct Common _GUID/UUID Errors" />
+                <MenuItem
                     x:Name="ToggleCaseMenuItem"
                     Command="{x:Static local:EditTextWindow.ToggleCaseCmd}"
                     Header="Toggle _Case"
@@ -243,6 +260,11 @@
                     x:Name="FindAndReplaceMenuItem"
                     Click="FindAndReplaceMenuItem_Click"
                     Header="Find and Replace" />
+                <MenuItem
+                    x:Name="DefaultWebSearch"
+                    Command="{x:Static local:EditTextWindow.DefaultWebSearchCmd}"
+                    Header="Default Web Search" />
+                <MenuItem x:Name="WebSearchCollection" Header="Search web with..." />
                 <Separator />
                 <MenuItem
                     x:Name="SelectWordMenuItem"
@@ -284,6 +306,10 @@
                     Command="{x:Static local:EditTextWindow.SplitOnSelectionCmd}"
                     Header="Split Lines _Before Each Selection" />
                 <MenuItem
+                    x:Name="SplitLineAfterSelectionMI"
+                    Command="{x:Static local:EditTextWindow.SplitAfterSelectionCmd}"
+                    Header="Split Lines _After Each Selection" />
+                <MenuItem
                     x:Name="IsolateSelectionMI"
                     Command="{x:Static local:EditTextWindow.IsolateSelectionCmd}"
                     Header="_Isolate Selected Text"
@@ -303,6 +329,12 @@
             </MenuItem>
             <MenuItem Header="F_ormat">
                 <MenuItem
+                    x:Name="MarginsMenuItem"
+                    Checked="MarginsMenuItem_Checked"
+                    Header="_Use Margins"
+                    IsCheckable="True"
+                    Unchecked="MarginsMenuItem_Checked" />
+                <MenuItem
                     x:Name="WrapTextMenuItem"
                     Checked="WrapTextCHBOX_Checked"
                     Header="_Wrap Text"
@@ -314,7 +346,10 @@
                     Click="FontMenuItem_Click"
                     Header="_Font..." />
             </MenuItem>
-            <MenuItem Header="_Capture">
+            <MenuItem
+                x:Name="CaptureMenuItem"
+                Header="_Capture"
+                SubmenuOpened="CaptureMenuItem_SubmenuOpened">
                 <MenuItem
                     x:Name="FullScreenGrabMenuItem"
                     Click="FullScreenGrabMenuItem_Click"
@@ -354,6 +389,7 @@
                     x:Name="ReadFolderOfImages"
                     Click="ReadFolderOfImages_Click"
                     Header="_Extract Text from Images in Folder..." />
+                <MenuItem x:Name="LanguageMenuItem" Header="Using OCR Language..." />
                 <MenuItem
                     x:Name="RecursiveFoldersCheck"
                     Header="Scan all folders recursively"
@@ -405,6 +441,16 @@
                     Header="Open _Fullscreen on Launch"
                     IsCheckable="True"
                     IsChecked="False" />
+                <MenuItem
+                    x:Name="RestorePositionMenuItem"
+                    Checked="RestorePositionMenuItem_Checked"
+                    Header="Set postion based on previous Edit Text Window"
+                    IsCheckable="True"
+                    Unchecked="RestorePositionMenuItem_Checked" />
+                <MenuItem
+                    x:Name="RestoreThisPosition"
+                    Click="RestoreThisPosition_Click"
+                    Header="_Restore this windows's position" />
                 <Separator />
                 <MenuItem
                     x:Name="NewWindowMenuItem"

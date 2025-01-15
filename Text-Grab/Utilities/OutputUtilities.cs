@@ -1,6 +1,5 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using Text_Grab.Properties;
 
 namespace Text_Grab.Utilities;
 
@@ -22,10 +21,10 @@ public class OutputUtilities
             return;
         }
 
-        if (!Settings.Default.NeverAutoUseClipboard)
+        if (!AppUtilities.TextGrabSettings.NeverAutoUseClipboard)
             try { Clipboard.SetDataObject(grabbedText, true); } catch { }
 
-        if (Settings.Default.ShowToast)
+        if (AppUtilities.TextGrabSettings.ShowToast)
             NotificationUtilities.ShowToast(grabbedText);
 
         WindowUtilities.ShouldShutDown();

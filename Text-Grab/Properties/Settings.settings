@@ -63,13 +63,13 @@
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="FullscreenGrabHotKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">F</Value>
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="GrabFrameHotkey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">G</Value>
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="EditWindowHotKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">E</Value>
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="EditWindowIsWordWrapOn" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
@@ -87,7 +87,7 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="LookupHotKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Q</Value>
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="TryToReadBarcodes" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
@@ -121,6 +121,33 @@
     </Setting>
     <Setting Name="UseHistory" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="TesseractPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ShortcutKeySets" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RestoreEtwPositions" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="EtwUseMargins" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="CloseFrameOnGrab" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="GrabFrameScrollBehavior" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Resize</Value>
+    </Setting>
+    <Setting Name="LookupSearchHistory" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="DefaultWebSearch" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="WebSearchItemsJson" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
     </Setting>
   </Settings>
 </SettingsFile>
